@@ -13,6 +13,8 @@ import time
 from datetime import datetime, timedelta
 import RFExplorer
 
+from ftplib import FTP
+
 #---------------------------------------------------------
 # Helper functions
 #---------------------------------------------------------
@@ -26,13 +28,15 @@ def PrintPeak(objRFE):
     fAmplitudeDBM = objSweepTemp.GetAmplitude_DBM(nStep)    #Get amplitude of the peak
     fCenterFreq = objSweepTemp.GetFrequencyMHZ(nStep)   #Get frequency of the peak
 
-    print("Sweep[" + str(nInd)+"]: Peak: " + "{0:.3f}".format(fCenterFreq) + "MHz  " + str(fAmplitudeDBM) + "dBm")
+    print("Sweep[" + str(nInd)+"]: Peak: " + "{0:.3f}".format(fCenterFreq) + "MHz  " + str(fAmplitudeDBM) + "dBm, nsteps: " + str(objSweepTemp.TotalSteps))
+    print(objSweepTemp.Dump())
+    print("maxhold " + objRFE.SweepData.MaxHoldData.Dump())
 
 #---------------------------------------------------------
 # global variables and initialization
 #---------------------------------------------------------
 
-SERIALPORT = None    #serial port identifier, use None to autodetect
+SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
@@ -41,6 +45,12 @@ TOTAL_SECONDS = 10           #Initialize time span to display activity
 #---------------------------------------------------------
 # Main processing loop
 #---------------------------------------------------------
+
+ftp = FTP('ftp.arvadamodelers.com')
+usr = input("ftp user: ")
+pwd = input("password: ")
+ftp.login(user=usr, passwd=pwd)
+print(ftp.getwelcome())
 
 try:
     #Find and show valid serial ports
@@ -68,13 +78,29 @@ try:
             #Process until we complete scan time
             nLastDisplayIndex=0
             startTime=datetime.now()
-            while ((datetime.now() - startTime).seconds<TOTAL_SECONDS):    
-                #Process all received data from device 
-                objRFE.ProcessReceivedString(True)
-                #Print data if received new sweep only
-                if (objRFE.SweepData.Count>nLastDisplayIndex):
-                    PrintPeak(objRFE)      
-                nLastDisplayIndex=objRFE.SweepData.Count
+            seq = 0
+            while (seq<2):    
+                print("start interval at " + str(startTime))
+                while ((datetime.now() - startTime).seconds<TOTAL_SECONDS):    
+                    #Process all received data from device 
+                    objRFE.ProcessReceivedString(True)
+                    #Print data if received new sweep only
+                    #if (objRFE.SweepData.Count>nLastDisplayIndex):
+                    #    PrintPeak(objRFE)      
+                    
+                    nLastDisplayIndex=objRFE.SweepData.Count
+                # log the maxhold data and reset
+                PrintPeak(objRFE)      
+                with open('tmpfile', 'w') as tmpfile:
+                    tmpfile.write(str(startTime) + '\n')
+                    tmpfile.write(objRFE.SweepData.MaxHoldData.Dump())
+                with open('tmpfile', 'rb') as tmpfile:
+                    ftp.storbinary('STOR rfscan.csv', tmpfile)
+                
+                objRFE.SweepData.CleanAll()
+                startTime=datetime.now()
+                seq = seq+1
+                
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
@@ -86,5 +112,7 @@ except Exception as obEx:
 # Close object and release resources
 #---------------------------------------------------------
 
+ftp.quit()
+                
 objRFE.Close()    #Finish the thread and close port
 objRFE = None 
