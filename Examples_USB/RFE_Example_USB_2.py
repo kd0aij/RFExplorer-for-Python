@@ -65,7 +65,7 @@ def ControlSettings(objRFE):
 # global variables and initialization
 #---------------------------------------------------------
 
-SERIALPORT = None    #serial port identifier, use None to autodetect
+SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
