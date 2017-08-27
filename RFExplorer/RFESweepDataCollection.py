@@ -123,7 +123,7 @@ class RFESweepDataCollection:
                     #move all items one position down, lose the older one at position 0
                     self.m_nUpperBound = len(self.m_arrData) - 2
                     self.m_arrData[0] = None
-                    for nInd in self.m_nUpperBound:
+                    for nInd in range(self.m_nUpperBound):
                         self.m_arrData[nInd] = self.m_arrData[nInd + 1]
 
             self.m_nUpperBound += 1
