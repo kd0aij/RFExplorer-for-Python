@@ -12,59 +12,53 @@
 import time
 from datetime import datetime, timedelta
 from ftplib import FTP
+import numpy as np
 
 # import sys
 # sys.path.insert(0, '/home/markw/git/kd0aij/RFExplorer-for-Python/RFExplorer')
 import RFExplorer
+from matplotlib import pyplot as plt
 
 #---------------------------------------------------------
 # Helper functions
 #---------------------------------------------------------
 
-def PrintPeak(objRFE):
+def PrintPeak(objRFE, startTime):
     """This function prints the amplitude and frequency peak of the max hold data
-	"""
+    """
     nInd = objRFE.SweepData.Count-1
     print("sweep count: %d" % nInd)
     sweepObj = objRFE.SweepData.MaxHoldData
+    if sweepObj == None:
+        return ""
     peakIndex = sweepObj.GetPeakStep()      #Get index of the peak
     fAmplitudeDBM = sweepObj.GetAmplitude_DBM(peakIndex)    #Get amplitude of the peak
     fCenterFreq = sweepObj.GetFrequencyMHZ(peakIndex)   #Get frequency of the peak
     startFreq = sweepObj.GetFrequencyMHZ(0)
     endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps)
 
-    print("peak index [" + str(peakIndex) + "]: Peak: " + "{0:.3f}".format(fCenterFreq) + " MHz  " + 
-     str(fAmplitudeDBM) + " dBm\n")
-    #print(sweepObj.Dump())
-    sResult = "start freq:" + str(startFreq) + ", end freq: " + str(endFreq) + " MHz, Peak: " + "{0:.3f}".format(fCenterFreq) + " MHz, " + str(fAmplitudeDBM) + " dBm\n"
-    sResult += str(datetime.now()) + "\n"
+    sResult = str(startTime)
+    sResult += ", start freq," + str(startFreq) + ", end freq, " + str(endFreq) + " MHz, Peak, " + "{0:.3f}".format(fCenterFreq) + " MHz, " + str(fAmplitudeDBM) + " dBm, "
     for nStep in range(sweepObj.TotalSteps):
         if (nStep > 0):
             sResult += ","
-        sResult += str('{:04.1f}'.format(sweepObj.GetAmplitudeDBM(nStep, None, False)))
-    sResult += "\n"
-    return sResult
+        sResult += str('{:04.1f}'.format(sweepObj.GetAmplitudeDBM(nStep, None, False)+120))
+    return sResult + "\n"
 
 #---------------------------------------------------------
 # global variables and initialization
 #---------------------------------------------------------
 
-SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
+SERIALPORT = None    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
-TOTAL_SECONDS = 60           #Initialize time span to display activity
-maxhold = []
+RPT_INTERVAL = 10           #Initialize time span to display activity
+fseq = 0;
 
 #---------------------------------------------------------
 # Main processing loop
 #---------------------------------------------------------
-
-ftp = FTP('ftp.arvadamodelers.com')
-pwd = input("password: ")
-ftp.login(user='wxupload@arvadamodelers.com', passwd=pwd)
-print(ftp.getwelcome())
-ftp.cwd('/rfscans')
 
 try:
     #Find and show valid serial ports
@@ -79,7 +73,7 @@ try:
             pass
         #Wait for unit to stabilize
         time.sleep(10)
-
+        
         #Request RF Explorer configuration
         objRFE.SendCommand_RequestConfigData()
         #Wait to receive configuration and model details
@@ -93,55 +87,43 @@ try:
             # turn Autogrow off since it will quickly run out of RAM
             # there is a max of 1000 sweeps allowed in RFESweepDataCollection
             objRFE.SweepData.m_bAutogrow = False
+            sweepObj = objRFE.SweepData.MaxHoldData
             
-            iseq = 0
-            fseq = 0
-            fname = "scan_%04d.csv" % fseq
-            logfile = open('tmpfile', 'w')
+            w = sweepObj.TotalSteps
+            h = 60
+            pdata=np.zeros((h,w,3),dtype=np.uint8)
+            
+            # wait for start of interval
+            while (datetime.now().second % RPT_INTERVAL) != 0:
+                time.sleep(0.5)
+                startTime=datetime.now()
+
+            fname = "scans.csv"
+            logfile = open(fname, 'w')
+
             # run forever
             while (True):
-                iseq += 1
-                # collect data for TOTAL_SECONDS
-                startTime=datetime.now()
-                print("start %d sec interval at %s" % (TOTAL_SECONDS, str(startTime)))
-                while ((datetime.now() - startTime).seconds<TOTAL_SECONDS):    
-                    #Process all received data from device 
+                fseq += 1
+                # collect data for RPT_INTERVAL
+                while ((datetime.now() - startTime).seconds<RPT_INTERVAL):    
                     objRFE.ProcessReceivedString(True)
-                
-                # check status: for now just check for changes in max hold data
-                if (not maxhold):
-                    # get reference to maxhold SweepData object
-                    objMaxHold = objRFE.SweepData.MaxHoldData
-                    # make a copy of the maxhold list
-                    maxhold = objMaxHold.m_arrAmplitude[:];
-                else:
-                    # update the longterm maxhold data
-                    for i in range(len(maxhold)):
-                        if (maxhold[i] < objMaxHold.GetAmplitude_DBM(i)):
-                            maxhold[i] = objMaxHold.GetAmplitude_DBM(i)
-                            print("new max: freq: %.1f, amp: %.1f" % (objMaxHold.GetFrequencyMHZ(i), maxhold[i]))
-                            
-                # write to tmp file and ftp to host
-                logfile.write(PrintPeak(objRFE))
+                startTime=datetime.now()
+                                     
+                print("displaying record %4d, peak dBm: %04d" % (fseq, sweepObj.GetAmplitudeDBM(sweepObj.GetPeakStep())))                                     
+                for nStep in range(w):
+                    pdata[fseq,nStep] = sweepObj.GetAmplitudeDBM(nStep, None, False)+120
 
-                # transfer and start a new file every 10 minutes (to avoid getting kicked off the server)
-                if (iseq == 10):
-                    iseq = 0
-                    logfile.close()
-                    # clear the maxhold data
-                    objRFE.SweepData.m_MaxHoldData = None
-                    # first send the current file to the server
-                    ftpcommand = "STOR %s" % fname
-                    print("ftp command %s" % ftpcommand)
-                     
-                    with open('tmpfile', 'rb') as tmpfile:
-                        ftp.storbinary(ftpcommand, tmpfile)
-                    # create new tmpfile
-                    fseq += 1
-                    startTime=datetime.now()
-                    print("start new file at " + str(startTime))
-                    fname = "scan_%04d.csv" % fseq
-                    logfile = open('tmpfile', 'w')
+                plt.close()
+                plt.figure(1)
+                plt.imshow(pdata,interpolation='nearest')
+                plt.show(block=False)
+                
+                # transfer and reset the maxhold array 
+                record = PrintPeak(objRFE, startTime)
+                objRFE.SweepData.m_MaxHoldData = None                 
+                logfile.write(record)
+                time.sleep(1)
+                if (fseq >= 60): fseq = 0
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
