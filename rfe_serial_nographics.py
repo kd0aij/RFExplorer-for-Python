@@ -49,7 +49,8 @@ def PrintPeak(objRFE, startTime):
 # global variables and initialization
 #---------------------------------------------------------
 
-SERIALPORT = None    #serial port identifier, use None to autodetect
+SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
+#SERIALPORT = None    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
@@ -94,9 +95,11 @@ try:
             pdata=np.zeros((h,w,3),dtype=np.uint8)
             
             # wait for start of interval
-            while (datetime.now().second % RPT_INTERVAL) != 0:
-                time.sleep(0.5)
+            while (True):
                 startTime=datetime.now()
+                if (startTime % RPT_INTERVAL) == 0:
+                    break
+                time.sleep(0.5)
 
             fname = "scans.csv"
             logfile = open(fname, 'w')
