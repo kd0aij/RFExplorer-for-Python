@@ -87,17 +87,15 @@ try:
 
             # turn Autogrow off since it will quickly run out of RAM
             # there is a max of 1000 sweeps allowed in RFESweepDataCollection
-            objRFE.SweepData.m_bAutogrow = False
-            sweepObj = objRFE.SweepData.MaxHoldData
-            
-            w = sweepObj.TotalSteps
+            objRFE.SweepData.m_bAutogrow = False           
+            w = objRFE.SweepData.MaxHoldData.TotalSteps
             h = 60
             pdata=np.zeros((h,w,3),dtype=np.uint8)
             
             # wait for start of interval
             while (True):
                 startTime=datetime.now()
-                if (startTime % RPT_INTERVAL) == 0:
+                if (startTime.second % RPT_INTERVAL) == 0:
                     break
                 time.sleep(0.5)
 
@@ -112,9 +110,10 @@ try:
                     objRFE.ProcessReceivedString(True)
                 startTime=datetime.now()
                                      
-                print("displaying record %4d, peak dBm: %04d" % (fseq, sweepObj.GetAmplitudeDBM(sweepObj.GetPeakStep())))                                     
+                sweepObj = objRFE.SweepData.MaxHoldData
+                print("displaying record %4d, peak dBm: %04d" % (fseq, sweepObj.GetAmplitude_DBM(sweepObj.GetPeakStep())))                                     
                 for nStep in range(w):
-                    pdata[fseq,nStep] = sweepObj.GetAmplitudeDBM(nStep, None, False)+120
+                    pdata[fseq,nStep] = sweepObj.GetAmplitude_DBM(nStep)+120
 
                 plt.close()
                 plt.figure(1)
