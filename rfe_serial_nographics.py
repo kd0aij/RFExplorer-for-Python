@@ -104,7 +104,6 @@ try:
 
             # run forever
             while (True):
-                fseq += 1
                 # collect data for RPT_INTERVAL
                 while ((datetime.now() - startTime).seconds<RPT_INTERVAL):    
                     objRFE.ProcessReceivedString(True)
@@ -125,7 +124,8 @@ try:
                 objRFE.SweepData.m_MaxHoldData = None                 
                 logfile.write(record)
                 time.sleep(1)
-                if (fseq >= 60): fseq = 0
+                fseq += 1
+                if (fseq >= 59): fseq = 0
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
