@@ -238,7 +238,7 @@ class RFECommunicator(object):
         self.m_nRetriesCalibration = 0
         self.m_RFGenCal = RFE6GEN_CalibrationData()
         self.m_FileAmplitudeCalibration = RFEAmplitudeTableData()   #This variable contains the latest correction file loaded
-        self.m_SweepDataContainer = RFESweepDataCollection(100 * 1024, True)
+        self.m_SweepDataContainer = RFESweepDataCollection(256, False)
         self.m_objQueue = queue.Queue()
         self.m_objThread = ReceiveSerialThread(self, self.m_objQueue, self.m_objSerialPort, self.m_hQueueLock, self.m_hSerialPortLock)
         self.m_objThread.start()

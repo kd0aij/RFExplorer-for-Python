@@ -30,7 +30,7 @@ CONST_FCY_CLOCK = 16 * 1000 * 1000   #RFECommunicator - public const UInt32 FCY_
 CONST_MIN_AMPLITUDE_DBM = -120.0   #RFECommunicator - public const float MIN_AMPLITUDE_DBM = -120.0f
 CONST_MAX_SPECTRUM_STEPS = 65535   #RFECommunicator - public const UInt16 MAX_SPECTRUM_STEPS = 65535
 CONST_MAX_AMPLITUDE_DBM = 50.0  #RFECommunicator - public const float MAX_AMPLITUDE_DBM = 50.0f
-CONST_MAX_ELEMENTS = (1000)     #This is the absolute max size that can be allocated
+CONST_MAX_ELEMENTS = (50)     #This is the absolute max size that can be allocated
 CONST_FILE_VERSION = 2         #File format constant indicates the latest known and supported file format
 CONST_ACKNOWLEDGE = "#ACK"
 
