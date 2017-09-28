@@ -87,10 +87,7 @@ try:
 
             # turn Autogrow off since it will quickly run out of RAM
             # there is a max of 1000 sweeps allowed in RFESweepDataCollection
-            objRFE.SweepData.m_bAutogrow = False           
-            w = objRFE.SweepData.MaxHoldData.TotalSteps
-            h = 60
-            pdata=np.zeros((h,w,3),dtype=np.uint8)
+            #objRFE.SweepData.m_bAutogrow = False # changed in RFExplorer.py           
             
             # wait for start of interval
             while (True):
@@ -111,21 +108,39 @@ try:
                                      
                 sweepObj = objRFE.SweepData.MaxHoldData
                 print("displaying record %4d, peak dBm: %04d" % (fseq, sweepObj.GetAmplitude_DBM(sweepObj.GetPeakStep())))                                     
-                for nStep in range(w):
-                    pdata[fseq,nStep] = sweepObj.GetAmplitude_DBM(nStep)+120
 
+                w = objRFE.SweepData.MaxHoldData.TotalSteps
+                h = objRFE.SweepData.Count
+                pdata=np.zeros((h,w,3),dtype=np.uint8)
+                for row in range(h):
+                    scan = objRFE.SweepData.GetData(row)
+                    
+                    peakIndex = scan.GetPeakStep()      #Get index of the peak
+                    fAmplitudeDBM = scan.GetAmplitude_DBM(peakIndex)    #Get amplitude of the peak
+                    fCenterFreq = scan.GetFrequencyMHZ(peakIndex)   #Get frequency of the peak
+                    startFreq = scan.GetFrequencyMHZ(0)
+                    endFreq = scan.GetFrequencyMHZ(scan.TotalSteps)
+                    sResult = str(startTime)
+                    sResult += ", start freq," + str(startFreq) + ", end freq, " + str(endFreq) + " MHz, Peak, " + "{0:.3f}".format(fCenterFreq) + " MHz, " + str(fAmplitudeDBM) + " dBm, "
+                    for nStep in range(scan.TotalSteps):
+                        if (nStep > 0):
+                            sResult += ","
+                        sResult += str('{:04.1f}'.format(scan.GetAmplitudeDBM(nStep, None, False)+120))
+                    logfile.write(sResult + "\n")
+                    
+                    for nStep in range(w):
+                        pdata[row,nStep] = scan.GetAmplitudeDBM(nStep, None, False)+120
                 plt.close()
                 plt.figure(1)
                 plt.imshow(pdata,interpolation='nearest')
                 plt.show(block=False)
                 
                 # transfer and reset the maxhold array 
-                record = PrintPeak(objRFE, startTime)
-                objRFE.SweepData.m_MaxHoldData = None                 
-                logfile.write(record)
+                #record = PrintPeak(objRFE, startTime)
+                #objRFE.SweepData.m_MaxHoldData = None                 
+                #logfile.write(record)
                 time.sleep(1)
                 fseq += 1
-                if (fseq >= 59): fseq = 0
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
