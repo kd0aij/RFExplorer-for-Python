@@ -22,7 +22,7 @@ from RFExplorer import RFE_Common
 # Helper functions
 #---------------------------------------------------------
 
-def PrintPeak(objRFE, startTime):
+def FormatMaxHold(objRFE, startTime):
     """This function prints the amplitude and frequency peak of the max hold data
     """
     nInd = objRFE.SweepData.Count-1
@@ -98,7 +98,7 @@ try:
                 startTime=datetime.now()
                 
                 # transfer and reset the maxhold array 
-                record = PrintPeak(objRFE, startTime)
+                record = FormatMaxHold(objRFE, startTime)
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
                 time.sleep(1)
