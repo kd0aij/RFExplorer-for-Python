@@ -42,7 +42,7 @@ class RFESweepDataCollection:
                                             #be limited to initial collection size
 
         self.m_nInitialCollectionSize = nCollectionSize
-
+        
         self.CleanAll()
     
     @property    
@@ -109,7 +109,7 @@ class RFESweepDataCollection:
             SweepData -- A single sweep data
         Returns:
             Boolean True it sweep data is added, False otherwise
-		"""
+        """
         try:
             if (self.IsFull()):
                 return False
@@ -134,6 +134,7 @@ class RFESweepDataCollection:
                 if (SweepData.GetAmplitudeDBM(nInd, None, False) > self.m_MaxHoldData.GetAmplitudeDBM(nInd, None, False)):
                     self.m_MaxHoldData.SetAmplitudeDBM(nInd, SweepData.GetAmplitudeDBM(nInd, None, False))
                 nInd += 1
+                
         except Exception as obEx:
             print("Error in RFESweepDataCollection - Add(): " + str(obEx))
             return False
@@ -143,6 +144,7 @@ class RFESweepDataCollection:
     def CleanAll(self):
         """Initialize internal data
 		"""
+        self.m_arrData = []            #Collection of available spectrum data items
         self.m_arrData = [RFESweepData] * self.m_nInitialCollectionSize   
         self.m_MaxHoldData = None
         self.m_nUpperBound = -1
