@@ -33,12 +33,13 @@ def PrintPeak(objRFE, startTime):
     fAmplitudeDBM = sweepObj.GetAmplitude_DBM(peakIndex)    #Get amplitude of the peak
     fCenterFreq = sweepObj.GetFrequencyMHZ(peakIndex)   #Get frequency of the peak
     startFreq = sweepObj.GetFrequencyMHZ(0)
-    endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps)
+    endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps-1)
 
     sResult = str(startTime)
-    sResult += ", start freq," + str(startFreq) + ", end freq, "
-    sResult += str(endFreq) + " MHz, Peak, " + "{0:.3f}".format(fCenterFreq)
-    sResult += " MHz, " + str(fAmplitudeDBM) + " dBm"
+    sResult += ", start freq, {0:.1f}".format(startFreq)
+    sResult += ", end freq, {0:.1f} MHz".format(endFreq)
+    sResult += ", Peak, {0:.1f} MHz".format(fCenterFreq)
+    sResult += ", {0:.1f} dBm".format(fAmplitudeDBM)
     print(sResult)
     
     for nStep in range(sweepObj.TotalSteps):
