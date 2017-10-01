@@ -11,7 +11,7 @@
 
 import time
 from datetime import datetime, timedelta
-from ftplib import FTP
+import serial
 
 # import sys
 # sys.path.insert(0, '/home/markw/git/kd0aij/RFExplorer-for-Python/RFExplorer')
@@ -46,6 +46,21 @@ def FormatMaxHold(objRFE, startTime):
         sResult += ","
         sResult += str('{0:4.1f}'.format(sweepObj.GetAmplitude_DBM(nStep)))
     return sResult + "\n"
+    
+def ResetRFE():
+    #Reset the unit to start fresh
+    objRFE.SendCommand("r")
+    #Wait for unit to notify reset completed
+    while(objRFE.IsResetEvent):
+        pass
+    #Wait for unit to stabilize
+    time.sleep(10)
+    #Request RF Explorer configuration
+    objRFE.SendCommand_RequestConfigData()
+    #Wait to receive configuration and model details
+    while(objRFE.ActiveModel == RFExplorer.RFE_Common.eModel.MODEL_NONE):
+        objRFE.ProcessReceivedString(True)    #Process the received configuration
+
 
 #---------------------------------------------------------
 # global variables and initialization
@@ -54,6 +69,7 @@ def FormatMaxHold(objRFE, startTime):
 SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
 #SERIALPORT = None    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
+rfmodem = serial.Serial('/dev/ttyUSB1')
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 fseq = 0;
@@ -68,41 +84,44 @@ try:
 
     #Connect to available port
     if (objRFE.ConnectPort(SERIALPORT, BAUDRATE)):
-        #Reset the unit to start fresh
-        objRFE.SendCommand("r")
-        #Wait for unit to notify reset completed
-        while(objRFE.IsResetEvent):
-            pass
-        #Wait for unit to stabilize
-        time.sleep(10)
+        ResetRFE()
         
-        #Request RF Explorer configuration
-        objRFE.SendCommand_RequestConfigData()
-        #Wait to receive configuration and model details
-        while(objRFE.ActiveModel == RFExplorer.RFE_Common.eModel.MODEL_NONE):
-            objRFE.ProcessReceivedString(True)    #Process the received configuration
-
         #If object is an analyzer, we can scan for received sweeps
         if (objRFE.IsAnalyzer()):
             print("Initialized...")
 
-            fname = "scans.csv"
+            fname = "scan_{0:04d}.csv".format(fseq)
             logfile = open(fname, 'w')
+            print("logging to file: " + fname)
 
-            # run forever
+            startTime=datetime.now()
+            print("starting at " + str(startTime))
             while (True):
                 # collect RFE_Common.CONST_MAX_ELEMENTS scans
                 while (objRFE.SweepData.Count < RFE_Common.CONST_MAX_ELEMENTS):
                     objRFE.ProcessReceivedString(True)
                     
-                startTime=datetime.now()
+                scanTime=datetime.now()
                 
                 # transfer and reset the maxhold array 
-                record = FormatMaxHold(objRFE, startTime)
+                record = FormatMaxHold(objRFE, scanTime)
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
-                time.sleep(1)
-                fseq += 1
+                rfmodem.write(record.encode())
+
+                # reset every 60 minutes
+                resetTime = datetime.now()
+                if ((resetTime-startTime).seconds >= 60 * 60):
+                    print("reset at " + str(resetTime))                    
+                    ResetRFE()
+                    startTime = datetime.now()
+                    print("reset took " + str(startTime-resetTime))
+                    
+                    logfile.close()
+                    fseq += 1
+                    fname = "scan_{0:04d}.csv".format(fseq)
+                    logfile = open(fname, 'w')
+                    print("logging to file: " + fname)
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
