@@ -36,10 +36,10 @@ def FormatMaxHold(objRFE, startTime):
     endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps-1)
 
     sResult = str(startTime)
-    sResult += ", start freq, {0:.1f}".format(startFreq)
-    sResult += ", end freq, {0:.1f} MHz".format(endFreq)
-    sResult += ", Peak, {0:.1f} MHz".format(fCenterFreq)
-    sResult += ", {0:.1f} dBm".format(fAmplitudeDBM)
+    sResult += ", start freq, {0:.1f}, MHz".format(startFreq)
+    sResult += ", end freq, {0:.1f}, MHz".format(endFreq)
+    sResult += ", Peak, {0:.1f}, MHz".format(fCenterFreq)
+    sResult += ", {0:.1f}, dBm".format(fAmplitudeDBM)
     print(sResult)
     
     for nStep in range(sweepObj.TotalSteps):
