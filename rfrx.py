@@ -12,6 +12,7 @@
 import time
 from datetime import datetime, timedelta
 import serial
+from ftplib import FTP
 
 #---------------------------------------------------------
 # global variables and initialization
@@ -19,13 +20,42 @@ import serial
 
 rfmodem1 = serial.Serial('/dev/ttyUSB1', 57600, timeout=15)
 
+ftp = FTP('192.168.0.1')
+pwd = input("password: ")
+ftp.login(user='markw', passwd=pwd)
+print(ftp.getwelcome())
+ftp.cwd('new/rfscans')
+
+fseq = 0
+fname = "scan_%04d.csv" % fseq
+logfile = open('tmpfile', 'w')
+
 #---------------------------------------------------------
 # Main processing loop
 #---------------------------------------------------------
 
-k = 0
+iseq = 0
 while (True):
+	iseq += 1
 	rec = rfmodem1.readline()
-	print("record: {0:d}\n".format(k) + str(rec.decode()))
-	k += 1
+	print("record: {0:d}\n".format(iseq) + str(rec.decode()))
 	
+	# write to tmp file
+	logfile.write(str(rec.decode()))
+	
+	if (iseq == 10):
+		# transfer and start a new file
+		iseq = 0
+		logfile.close()
+		# first send the current file to the server
+		ftpcommand = "STOR %s" % fname
+		print("ftp command %s" % ftpcommand)
+		 
+		with open('tmpfile', 'rb') as tmpfile:
+			ftp.storbinary(ftpcommand, tmpfile)
+		# create new tmpfile
+		fseq += 1
+		startTime=datetime.now()
+		print("start new file at " + str(startTime))
+		fname = "scan_%04d.csv" % fseq
+		logfile = open('tmpfile', 'w')
