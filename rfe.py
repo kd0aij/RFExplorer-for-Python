@@ -69,7 +69,6 @@ def ResetRFE():
 SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
 #SERIALPORT = None    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
-rfmodem = serial.Serial('/dev/ttyUSB1')
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 fseq = 0;
@@ -88,6 +87,7 @@ try:
         
         #If object is an analyzer, we can scan for received sweeps
         if (objRFE.IsAnalyzer()):
+            rfmodem = serial.Serial('/dev/ttyUSB1', 57600)
             print("Initialized...")
 
             fname = "scan_{0:04d}.csv".format(fseq)
@@ -107,7 +107,7 @@ try:
                 record = FormatMaxHold(objRFE, scanTime)
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
-                rfmodem.write(record.encode())
+                rfmodem.write(record.encode('utf-8'))
 
                 # reset every 60 minutes
                 resetTime = datetime.now()
