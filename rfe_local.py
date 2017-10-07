@@ -35,10 +35,10 @@ def FormatMaxHold(objRFE, startTime):
     endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps-1)
 
     sResult = str(startTime)
-    sResult += ", start freq, {0:.1f}".format(startFreq)
-    sResult += ", end freq, {0:.1f} MHz".format(endFreq)
-    sResult += ", Peak, {0:.1f} MHz".format(fCenterFreq)
-    sResult += ", {0:.1f} dBm".format(fAmplitudeDBM)
+    sResult += ", start freq, {0:.1f}, MHz".format(startFreq)
+    sResult += ", end freq, {0:.1f}, MHz".format(endFreq)
+    sResult += ", Peak, {0:.1f}, MHz".format(fCenterFreq)
+    sResult += ", {0:.1f}, dBm".format(fAmplitudeDBM)
     print(sResult)
     
     for nStep in range(sweepObj.TotalSteps):
@@ -70,7 +70,6 @@ SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
-fseq = 0;
 
 #---------------------------------------------------------
 # Main processing loop
@@ -88,12 +87,12 @@ try:
         if (objRFE.IsAnalyzer()):
             print("Initialized...")
 
-            fname = "scan_{0:04d}.csv".format(fseq)
+            startTime=datetime.now()
+            
+            fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
             logfile = open(fname, 'w')
             print("logging to file: " + fname)
 
-            startTime=datetime.now()
-            print("starting at " + str(startTime))
             while (True):
                 # collect RFE_Common.CONST_MAX_ELEMENTS scans
                 while (objRFE.SweepData.Count < RFE_Common.CONST_MAX_ELEMENTS):
@@ -115,8 +114,7 @@ try:
                     print("reset took " + str(startTime-resetTime))
                     
                     logfile.close()
-                    fseq += 1
-                    fname = "scan_{0:04d}.csv".format(fseq)
+                    fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
                     logfile = open(fname, 'w')
                     print("logging to file: " + fname)
         else:
