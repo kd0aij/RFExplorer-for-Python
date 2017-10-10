@@ -4,16 +4,12 @@
 #pylint: disable=too-many-branches, too-many-public-methods, too-many-locals, too-many-arguments
 
 #============================================================================
-#This is an example code for RFExplorer python functionality. 
-#Display amplitude value in dBm and frequency in MHz of the maximum value of sweep data.
-#The number of stored sweep data can be configurated by time
+# Log RFexplorer scans to csv files; start a new file every hour.
 #============================================================================
 
 import time
 from datetime import datetime, timedelta
 
-# import sys
-# sys.path.insert(0, '/home/markw/git/kd0aij/RFExplorer-for-Python/RFExplorer')
 import RFExplorer
 from RFExplorer import RFE_Common 
 
@@ -39,7 +35,10 @@ def FormatMaxHold(objRFE, startTime):
     sResult += ", end freq, {0:.1f}, MHz".format(endFreq)
     sResult += ", Peak, {0:.1f}, MHz".format(fCenterFreq)
     sResult += ", {0:.1f}, dBm".format(fAmplitudeDBM)
-    print(sResult)
+
+#    date = str(startTime).split(' ')[0]
+    time = str(startTime).split(' ')[1].split('.')[0]
+    print("{:s}: Peak {:.1f} dBm at {:.1f} MHz".format(time, fAmplitudeDBM, fCenterFreq))
     
     for nStep in range(sweepObj.TotalSteps):
         sResult += ","
@@ -65,8 +64,7 @@ def ResetRFE():
 # global variables and initialization
 #---------------------------------------------------------
 
-SERIALPORT = "/dev/ttyUSB0"    #serial port identifier, use None to autodetect
-#SERIALPORT = None    #serial port identifier, use None to autodetect
+SERIALPORT = "/dev/ttyUSB0"    #serial port identifier
 BAUDRATE = 500000
 
 objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
@@ -76,10 +74,7 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 #---------------------------------------------------------
 
 try:
-    #Find and show valid serial ports
-    objRFE.GetConnectedPorts()    
-
-    #Connect to available port
+    #Connect to specified port
     if (objRFE.ConnectPort(SERIALPORT, BAUDRATE)):
         ResetRFE()
         
@@ -94,9 +89,13 @@ try:
             print("logging to file: " + fname)
 
             while (True):
+                
                 # collect RFE_Common.CONST_MAX_ELEMENTS scans
                 while (objRFE.SweepData.Count < RFE_Common.CONST_MAX_ELEMENTS):
                     objRFE.ProcessReceivedString(True)
+                    
+                    # each scan takes about 0.1 seconds, so check for data at 20Hz max
+                    time.sleep(0.05)
                     
                 scanTime=datetime.now()
                 
