@@ -74,11 +74,8 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 # Main processing loop
 #---------------------------------------------------------
 
-ftp = FTP('71.205.254.76')
 pwd = input("password: ")
-ftp.login(user='markw', passwd=pwd)
-print(ftp.getwelcome())
-ftp.cwd('/data')
+ftp = None
 
 try:
     #Connect to specified port
@@ -116,7 +113,10 @@ try:
                 resetTime = datetime.now()
                 if ((resetTime-startTime).seconds >= 2 * 60):
                     logfile.close()
+                    
+                    if (ftp != None): ftp.quit()
 
+                    ftp = FTP('71.205.254.76')
                     ftp.login(user='markw', passwd=pwd)
                     print(ftp.getwelcome())
                     ftp.cwd('/data')
@@ -124,6 +124,8 @@ try:
                     # send the current file to the server
                     ftpcommand = "STOR %s" % fname
                     print("ftp command %s" % ftpcommand)
+                    with open(fname, 'rb') as tmpfile:
+                        ftp.storbinary(ftpcommand, tmpfile)
                     ftp.quit()
                      
                     print("reset at " + str(resetTime))                    
@@ -131,8 +133,6 @@ try:
                     startTime = datetime.now()
                     print("reset took " + str(startTime-resetTime))
                     
-                    with open(fname, 'rb') as tmpfile:
-                        ftp.storbinary(ftpcommand, tmpfile)
                     fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
                     logfile = open(fname, 'w')
                     print("logging to file: " + fname)
