@@ -112,9 +112,9 @@ try:
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
 
-                # reset every 60 minutes
+                # reset every 10 minutes
                 resetTime = datetime.now()
-                if ((resetTime-startTime).seconds >= 60 * 60):
+                if ((resetTime-startTime).seconds >= 10 * 60):
                     print("reset at " + str(resetTime))                    
                     ResetRFE()
                     startTime = datetime.now()
