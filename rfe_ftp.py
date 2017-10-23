@@ -112,19 +112,25 @@ try:
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
 
-                # reset every 10 minutes
+                # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
-                if ((resetTime-startTime).seconds >= 10 * 60):
+                if ((resetTime-startTime).seconds >= 2 * 60):
+                    logfile.close()
+
+                    ftp.login(user='markw', passwd=pwd)
+                    print(ftp.getwelcome())
+                    ftp.cwd('/data')
+
+                    # send the current file to the server
+                    ftpcommand = "STOR %s" % fname
+                    print("ftp command %s" % ftpcommand)
+                    ftp.quit()
+                     
                     print("reset at " + str(resetTime))                    
                     ResetRFE()
                     startTime = datetime.now()
                     print("reset took " + str(startTime-resetTime))
                     
-                    logfile.close()
-                    # send the current file to the server
-                    ftpcommand = "STOR %s" % fname
-                    print("ftp command %s" % ftpcommand)
-                     
                     with open(fname, 'rb') as tmpfile:
                         ftp.storbinary(ftpcommand, tmpfile)
                     fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
