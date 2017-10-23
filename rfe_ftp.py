@@ -114,8 +114,6 @@ try:
                 if ((resetTime-startTime).seconds >= 2 * 60):
                     logfile.close()
                     
-                    if (ftp != None): ftp.quit()
-
                     ftp = FTP('71.205.254.76')
                     ftp.login(user='markw', passwd=pwd)
                     print(ftp.getwelcome())
