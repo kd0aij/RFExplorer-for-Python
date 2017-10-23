@@ -111,7 +111,7 @@ try:
 
                 # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
-                if ((resetTime-startTime).seconds >= 2 * 60):
+                if ((resetTime-startTime).seconds >= 10 * 60):
                     logfile.close()
                     
                     ftp = FTP('71.205.254.76')
