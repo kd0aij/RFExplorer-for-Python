@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 import RFExplorer
 from RFExplorer import RFE_Common 
+from ftplib import FTP
 
 #---------------------------------------------------------
 # Helper functions
@@ -73,6 +74,12 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 # Main processing loop
 #---------------------------------------------------------
 
+ftp = FTP('71.205.254.76')
+pwd = input("password: ")
+ftp.login(user='markw', passwd=pwd)
+print(ftp.getwelcome())
+ftp.cwd('/data')
+
 try:
     #Connect to specified port
     if (objRFE.ConnectPort(SERIALPORT, BAUDRATE)):
@@ -114,6 +121,12 @@ try:
                     print("reset took " + str(startTime-resetTime))
                     
                     logfile.close()
+                    # send the current file to the server
+                    ftpcommand = "STOR %s" % fname
+                    print("ftp command %s" % ftpcommand)
+                     
+                    with open(fname, 'rb') as tmpfile:
+                        ftp.storbinary(ftpcommand, tmpfile)
                     fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
                     logfile = open(fname, 'w')
                     print("logging to file: " + fname)
