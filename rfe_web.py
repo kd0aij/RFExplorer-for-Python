@@ -92,7 +92,8 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 #pwd = input("password: ")
 #ftp = None
 
-maxscans = 55
+# approximately 6 maxhold scans per minute
+maxscans = 60
 plotdata = np.zeros((maxscans,112))
 nscans = 0
 
@@ -123,16 +124,29 @@ try:
                     time.sleep(0.05)
                     
                 scanTime=datetime.now()
+                print(str(scanTime))
                 
+                # slide image down one scanline
+                for row in range(maxscans-2, -1, -1):
+                    for col in range(112):
+                        plotdata[row+1, col] = plotdata[row, col]
+                
+                # add maxhold data at top of image
                 maxHold = GetMaxHold(objRFE)
                 for col in range(112):
-                    plotdata[nscans, col] = 2 * (maxHold[col] + 120)
+                    plotdata[0, col] = 2 * (maxHold[col] + 120)
                 nscans += 1
                 
                 # transfer and reset the maxhold array 
                 record = FormatMaxHold(objRFE, scanTime)
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
+
+                plt.close()
+                plt.figure(num=1, figsize=(8,4))
+                plt.imshow(plotdata,interpolation='nearest',cmap="hot")
+                #plt.show(block=False)
+                plt.savefig("RFimage.png")
 
                 # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
@@ -152,12 +166,6 @@ try:
 ##                        ftp.storbinary(ftpcommand, tmpfile)
 ##                    ftp.quit()
                      
-                    plt.close()
-                    plt.figure(num=1, figsize=(8,4))
-                    plt.imshow(plotdata,interpolation='nearest',cmap="hot")
-                    #plt.show(block=False)
-                    plt.savefig("RFimage.png")
-
                     print("reset at " + str(resetTime))                    
                     ResetRFE()
                     startTime = datetime.now()
