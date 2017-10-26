@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 
 import RFExplorer
 from RFExplorer import RFE_Common 
-from ftplib import FTP
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -36,6 +35,7 @@ def FormatMaxHold(objRFE, startTime):
     fCenterFreq = sweepObj.GetFrequencyMHZ(peakIndex)   #Get frequency of the peak
     startFreq = sweepObj.GetFrequencyMHZ(0)
     endFreq = sweepObj.GetFrequencyMHZ(sweepObj.TotalSteps-1)
+    deltaFreq = (endFreq - startFreq) / (sweepObj.TotalSteps-1)
 
     sResult = str(startTime)
     sResult += ", start freq, {0:.1f}, MHz".format(startFreq)
@@ -50,7 +50,7 @@ def FormatMaxHold(objRFE, startTime):
     for nStep in range(sweepObj.TotalSteps):
         sResult += ","
         sResult += str('{0:4.1f}'.format(sweepObj.GetAmplitude_DBM(nStep)))
-    return sResult + "\n"
+    return (sResult + "\n", fAmplitudeDBM, fCenterFreq, startFreq, deltaFreq)
     
 def GetMaxHold(objRFE):
     """This function returns an array of max hold data values
@@ -59,7 +59,7 @@ def GetMaxHold(objRFE):
     data = np.zeros((sweepObj.TotalSteps, 1)) 
     for nStep in range(sweepObj.TotalSteps):
         data[nStep] = sweepObj.GetAmplitude_DBM(nStep)
-    return data
+    return data.flatten()
     
 def ResetRFE():
     #Reset the unit to start fresh
@@ -89,13 +89,9 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 # Main processing loop
 #---------------------------------------------------------
 
-#pwd = input("password: ")
-#ftp = None
-
 # approximately 6 maxhold scans per minute
 maxscans = 60
-plotdata = np.zeros((maxscans,112))
-nscans = 0
+nscans = -1
 
 try:
     #Connect to specified port
@@ -108,6 +104,8 @@ try:
 
             startTime=datetime.now()
             print(str(startTime))
+            
+            nFreqs = objRFE.SweepData.MaxHoldData.TotalSteps
 
             fprefix = str(startTime).split('.')[0].replace(' ','_').replace(':','-')
             fname = fprefix + ".csv"
@@ -124,48 +122,77 @@ try:
                     time.sleep(0.05)
                     
                 scanTime=datetime.now()
-                print(str(scanTime))
+                #print(str(scanTime))
+
+                # get new maxhold data                
+                maxHold = GetMaxHold(objRFE)
+                
+                # init plotdata to minimum amplitude of first scan
+                if (nscans == -1):
+                    nscans += 1
+                    minAmp = maxHold[0]
+                    for col in range(nFreqs):
+                        if (minAmp > maxHold[col]):
+                            minAmp = maxHold[col]
+                            
+                        plotdata = np.full((maxscans,nFreqs), minAmp)
                 
                 # slide image down one scanline
+                peakAmp = -200
                 for row in range(maxscans-2, -1, -1):
-                    for col in range(112):
-                        plotdata[row+1, col] = plotdata[row, col]
+                    for col in range(nFreqs):
+                        amp = plotdata[row, col]
+                        plotdata[row+1, col] = amp
+                        if (peakAmp < amp):
+                            peakAmp = amp
+                            peakCol = col
+                        if (minAmp > amp):
+                            minAmp = amp
                 
                 # add maxhold data at top of image
-                maxHold = GetMaxHold(objRFE)
-                for col in range(112):
-                    plotdata[0, col] = 2 * (maxHold[col] + 120)
-                nscans += 1
-                
-                # transfer and reset the maxhold array 
-                record = FormatMaxHold(objRFE, scanTime)
+                for col in range(nFreqs):
+                    amp = maxHold[col]
+                    plotdata[0, col] = amp
+                    if (peakAmp < amp):
+                        peakAmp = amp
+                        peakCol = col
+                    if (minAmp > amp):
+                        minAmp = amp
+                                     
+                # log to file and reset the maxhold array 
+                (record, scanPeak, scanPeakFreq, startFreq, deltaFreq) = FormatMaxHold(objRFE, scanTime)
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
 
                 plt.close()
                 plt.figure(num=1, figsize=(8,4))
+                fig, ax = plt.subplots()
                 plt.imshow(plotdata,interpolation='nearest',cmap="hot")
+                plt.xlabel('MHz')
+                plt.ylabel('minutes')
+                
+                locs,labels = plt.xticks()                
+                labels = ['{0:.1f}'.format(startFreq+locs[iTick]*deltaFreq) for iTick in range(len(labels))]
+                ax.set_xticklabels(labels)
+
+                tickIntvl = maxscans // 10
+                locs = range(0,maxscans,tickIntvl)
+                ax.set_yticks(locs)
+                labels = ['{0:d}'.format(iTick) for iTick in range(len(locs))]
+                ax.set_yticklabels(labels)
+                
+                peakFreq = startFreq + (peakCol * deltaFreq)
+                plt.title('{2:s}\npeak amp: {0:.1f}, freq: {1:.1f}'.format(peakAmp, peakFreq,str(scanTime).split('.')[0]))
                 #plt.show(block=False)
                 plt.savefig("RFimage.png")
 
                 # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
+                nscans += 1
                 if (nscans >= maxscans): #((resetTime-startTime).seconds >= 1 * 60):
                     nscans = 0
                     logfile.close()
-                    
-##                    ftp = FTP('71.205.254.76')
-##                    ftp.login(user='markw', passwd=pwd)
-##                    print(ftp.getwelcome())
-##                    ftp.cwd('/data')
-##
-##                    # send the current file to the server
-##                    ftpcommand = "STOR %s" % fname
-##                    print("ftp command %s" % ftpcommand)
-##                    with open(fname, 'rb') as tmpfile:
-##                        ftp.storbinary(ftpcommand, tmpfile)
-##                    ftp.quit()
-                     
+                                       
                     print("reset at " + str(resetTime))                    
                     ResetRFE()
                     startTime = datetime.now()
@@ -185,7 +212,5 @@ except Exception as obEx:
 # Close object and release resources
 #---------------------------------------------------------
 
-#ftp.quit()
-                
 objRFE.Close()    #Finish the thread and close port
 objRFE = None 
