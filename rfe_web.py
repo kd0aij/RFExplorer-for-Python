@@ -45,7 +45,7 @@ def FormatMaxHold(objRFE, startTime):
 
 #    date = str(startTime).split(' ')[0]
     time = str(startTime).split(' ')[1].split('.')[0]
-    print("{:s}: Peak {:.1f} dBm at {:.1f} MHz".format(time, fAmplitudeDBM, fCenterFreq))
+    #print("{:s}: Peak {:.1f} dBm at {:.1f} MHz".format(time, fAmplitudeDBM, fCenterFreq))
     
     for nStep in range(sweepObj.TotalSteps):
         sResult += ","
@@ -198,14 +198,14 @@ try:
                     nscans = 0
                     logfile.close()
                                        
-                    print("reset at " + str(resetTime))                    
+                    #print("reset at " + str(resetTime))                    
                     ResetRFE()
                     startTime = datetime.now()
-                    print("reset took " + str(startTime-resetTime))
+                    #print("reset took " + str(startTime-resetTime))
                     
                     fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
                     logfile = open(fname, 'w')
-                    print("logging to file: " + fname)
+                    #print("logging to file: " + fname)
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
