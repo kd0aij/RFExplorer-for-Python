@@ -181,11 +181,16 @@ try:
                 labels = ['{0:d}'.format(iTick) for iTick in range(len(locs))]
                 ax.set_yticklabels(labels)
                 
+                with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                    tstring = f.read()
+                tempc = float(tstring) / 1000
+
                 peakFreq = startFreq + (peakCol * deltaFreq)
-                plt.title('{2:s}\npeak amp: {0:.1f}, freq: {1:.1f}'.format(peakAmp, peakFreq,str(scanTime).split('.')[0]))
+                plt.title('{2:s} T:{3:.1f}C\npeak amp: {0:.1f}, freq: {1:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0], tempc))
+                
                 #plt.show(block=False)
                 plt.savefig("RFimage.png")
-
+                
                 # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
                 nscans += 1
