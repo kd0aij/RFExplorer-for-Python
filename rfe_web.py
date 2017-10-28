@@ -171,7 +171,7 @@ try:
                 with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
                     tstring = f.read()
                 tempc = float(tstring) / 1000
-                logfile.write("{0:s}, {1:.1f}".format(str(scanTime).split('.')[0], tempc))
+                logfile_t.write("{0:s}, {1:.1f}\n".format(str(scanTime).split('.')[0], tempc))
 
                 plt.close()
                 plt.figure(num=1, figsize=(8,4))
