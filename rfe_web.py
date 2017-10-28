@@ -208,7 +208,8 @@ try:
                     startTime = datetime.now()
                     #print("reset took " + str(startTime-resetTime))
                     
-                    fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
+                    fprefix = str(startTime).split('.')[0].replace(' ','_').replace(':','-')
+                    fname = fprefix + ".csv"
                     logfile = open(fname, 'w')
                     #print("logging to file: " + fname)
                     
