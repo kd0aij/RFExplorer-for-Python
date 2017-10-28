@@ -43,8 +43,8 @@ def FormatMaxHold(objRFE, startTime):
     sResult += ", Peak, {0:.1f}, MHz".format(fCenterFreq)
     sResult += ", {0:.1f}, dBm".format(fAmplitudeDBM)
 
-#    date = str(startTime).split(' ')[0]
-    time = str(startTime).split(' ')[1].split('.')[0]
+##    date = str(startTime).split(' ')[0]
+    #time = str(startTime).split(' ')[1].split('.')[0]
     #print("{:s}: Peak {:.1f} dBm at {:.1f} MHz".format(time, fAmplitudeDBM, fCenterFreq))
     
     for nStep in range(sweepObj.TotalSteps):
@@ -111,6 +111,10 @@ try:
             fname = fprefix + ".csv"
             logfile = open(fname, 'w')
             print("logging to file: " + fname)
+            
+            fname_t = fprefix + "_T.csv"
+            logfile_t = open(fname_t, 'w')
+            print("logging cpu temp to file: " + fname_t)
 
             while (True):
                 
@@ -164,6 +168,11 @@ try:
                 objRFE.SweepData.CleanAll()
                 logfile.write(record)
 
+                with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                    tstring = f.read()
+                tempc = float(tstring) / 1000
+                logfile.write("{0:s}, {1:.1f}".format(str(scanTime).split('.')[0], tempc))
+
                 plt.close()
                 plt.figure(num=1, figsize=(8,4))
                 fig, ax = plt.subplots()
@@ -181,10 +190,6 @@ try:
                 labels = ['{0:d}'.format(iTick) for iTick in range(len(locs))]
                 ax.set_yticklabels(labels)
                 
-                with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
-                    tstring = f.read()
-                tempc = float(tstring) / 1000
-
                 peakFreq = startFreq + (peakCol * deltaFreq)
                 plt.title('{2:s} T:{3:.1f}C\npeak amp: {0:.1f}, freq: {1:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0], tempc))
                 
@@ -206,6 +211,12 @@ try:
                     fname = str(startTime).split('.')[0].replace(' ','_').replace(':','-') + ".csv"
                     logfile = open(fname, 'w')
                     #print("logging to file: " + fname)
+                    
+                    logfile_t.close()
+                    fname_t = fprefix + "_T.csv"
+                    logfile_t = open(fname_t, 'w')
+                    #print("logging cpu temp to file: " + fname_t)
+
         else:
             print("Error: Device connected is a Signal Generator. \nPlease, connect a Spectrum Analyzer")
     else:
