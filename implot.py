@@ -42,7 +42,7 @@ for fname in sigfiles:
 # skip the last file since it probably spans midnight
 strtemp = ''
 for index in range(len(tfiles)-1):
-  print(tfiles[index])
+  #print(tfiles[index])
   infile = open(tfiles[index], 'r')
   strtemp += infile.read()
   
@@ -61,26 +61,29 @@ xvals = np.linspace(startsec/3600, endsec/3600, ntemps)
 
 for rec in range(ntemps):
   tempc[rec] = float(templines[rec].split(',')[1])
-fignum += 1
 fig, ax = plt.subplots(num=fignum, figsize=(8,4))
 ax.plot(xvals,tempc)
-#plt.xticks(np.linspace(ntemps/360,24))
 plt.xlabel('hours')
 plt.ylabel('degC')
 plt.title('CPU temp {0:s}'.format(templines[0].split(',')[0]))
 plt.savefig("cpuTemp.png")
 plt.show(block=False)
 
-while (True):
-  nscans = -1
-  instr = input("starting, ending index (return to quit): ").split(',')
-  if (instr[0] == ''): break
-  istart = instr[0]
-  iend = instr[1]
+# while (True):
+  # instr = input("starting, ending index,  (return to quit): ").split(',')
+  # if (instr[0] == ''): break
+  # istart = instr[0]
+  # iend = instr[1]
+
+nsig = len(sigfiles)
+interval = 6
+for istart in range(0,nsig,interval):
+  iend = istart + interval
+  if (iend > nsig): iend = nsig
 
   # concatenate selected signal files into strsig
   strsig = ''
-  for index in range(int(istart), int(iend)+1):
+  for index in range(istart, iend):
     print(sigfiles[index])
     infile = open(sigfiles[index], 'r')
     strsig += infile.read()
@@ -148,8 +151,9 @@ while (True):
   peakFreq = startFreq + (peakBin * deltaFreq)
   plt.title('{2:s}\npeak amp: {0:.1f}, freq: {1:.1f}, time: {3:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0],peakRec/6.0))
 
-  plt.savefig("RFimage.png")
+  plt.savefig("RFimage_{0:s}.png".format(str(scanTime).split(' ')[1].split('.')[0]))
+  plt.close(fignum)
 
-  plt.show(block=False)
+  #plt.show(block=False)
   
 
