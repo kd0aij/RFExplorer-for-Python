@@ -143,6 +143,7 @@ try:
                 
                 # slide image down one scanline
                 peakAmp = -200
+                peakRec = 0
                 for row in range(maxscans-2, -1, -1):
                     for col in range(nFreqs):
                         amp = plotdata[row, col]
@@ -150,6 +151,7 @@ try:
                         if (peakAmp < amp):
                             peakAmp = amp
                             peakCol = col
+                            peakRec = rec
                         if (minAmp > amp):
                             minAmp = amp
                 
@@ -160,6 +162,7 @@ try:
                     if (peakAmp < amp):
                         peakAmp = amp
                         peakCol = col
+                        peakRec = rec
                     if (minAmp > amp):
                         minAmp = amp
                                      
@@ -191,7 +194,7 @@ try:
                 ax.set_yticklabels(labels)
                 
                 peakFreq = startFreq + (peakCol * deltaFreq)
-                plt.title('{2:s} T:{3:.1f}C\npeak amp: {0:.1f}, freq: {1:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0], tempc))
+                plt.title('{2:s} T:{3:.1f}C\npeak amp: {0:.1f}, freq: {1:.1f}, time: {4:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0], tempc, peakRec/6.0))
                 
                 #plt.show(block=False)
                 plt.savefig("RFimage.png")
