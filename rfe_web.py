@@ -151,7 +151,7 @@ try:
                         if (peakAmp < amp):
                             peakAmp = amp
                             peakCol = col
-                            peakRec = rec
+                            peakRec = row+1
                         if (minAmp > amp):
                             minAmp = amp
                 
@@ -162,7 +162,7 @@ try:
                     if (peakAmp < amp):
                         peakAmp = amp
                         peakCol = col
-                        peakRec = rec
+                        peakRec = 0
                     if (minAmp > amp):
                         minAmp = amp
                                      
