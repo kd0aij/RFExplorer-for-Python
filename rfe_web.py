@@ -90,7 +90,7 @@ objRFE = RFExplorer.RFECommunicator()     #Initialize object and thread
 #---------------------------------------------------------
 
 # approximately 6 maxhold scans per minute
-maxscans = 60
+maxscans = 180
 nscans = -1
 
 try:
@@ -184,7 +184,7 @@ try:
                 labels = ['{0:.1f}'.format(startFreq+locs[iTick]*deltaFreq) for iTick in range(len(labels))]
                 ax.set_xticklabels(labels)
 
-                tickIntvl = maxscans // 10
+                tickIntvl = maxscans // 30
                 locs = range(0,maxscans,tickIntvl)
                 ax.set_yticks(locs)
                 labels = ['{0:d}'.format(iTick) for iTick in range(len(locs))]
