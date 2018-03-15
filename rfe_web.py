@@ -108,7 +108,7 @@ try:
             nFreqs = objRFE.SweepData.MaxHoldData.TotalSteps
 
             fprefix = str(startTime).split('.')[0].replace(' ','_').replace(':','-')
-            fname = fprefix + ".csv"
+            fname = "/var/www/html/RFdata/" + fprefix + ".csv"
             logfile = open(fname, 'w')
             print("logging to file: " + fname)
             
@@ -197,7 +197,7 @@ try:
                 plt.title('{2:s} T:{3:.1f}C\npeak amp: {0:.1f}, freq: {1:.1f}, time: {4:.1f}'.format(peakAmp, peakFreq, str(scanTime).split('.')[0], tempc, peakRec/6.0))
                 
                 #plt.show(block=False)
-                plt.savefig("RFimage.png")
+                plt.savefig("/var/www/html/RFdata/RFimage.png")
                 
                 # send the current file to the server and reset every 10 minutes
                 resetTime = datetime.now()
